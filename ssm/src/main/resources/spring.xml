@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"  
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:tx="http://www.springframework.org/schema/tx"  
+    xmlns:aop="http://www.springframework.org/schema/aop" xmlns:context="http://www.springframework.org/schema/context"  
+    xmlns:jee="http://www.springframework.org/schema/jee"  
+    xsi:schemaLocation="  
+            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd  
+            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd  
+            http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd  
+            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd  
+            http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-4.0.xsd">  
+  
+    <!-- 启用spring注解支持 -->  
+    <context:annotation-config />  
+    <context:component-scan base-package="com.mingge" />  
+      
+    <!-- 加载jdbc.properties文件，用于下边的数据库配置 -->    
+    <context:property-placeholder location="classpath:jdbc.properties"/>   
+      
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close"> 
+      <!-- 基本属性 url、user、password -->
+       <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" />
+      <property name="url" value="jdbc:oracle:thin:@localhost:1521:orcl" />
+      <property name="username" value="mingge" />
+      <property name="password" value="1234 " />
+
+      <!-- 配置初始化大小、最小、最大 -->
+      <property name="initialSize" value="1" />
+      <property name="minIdle" value="1" /> 
+      <property name="maxActive" value="20" />
+</bean>
+      
+    <!--创建sqlSessionFactory 开始 -->  
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">  
+        <property name="dataSource" ref="dataSource"></property>  
+        <property name="mapperLocations" value="classpath:com/mingge/mapper/*.xml"/>    
+        <property name="typeAliasesPackage" value="com.mingge.model"></property>  
+    </bean>  
+    <!--创建sqlSessionFactory 结束 -->  
+      
+    <!-- 扫描sql映射文件  开始-->  
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">  
+        <property name="basePackage" value="com.mingge.mapper"></property>  
+    </bean>  
+    <!-- 扫描sql映射文件  结束-->  
+      
+    <!-- 配置事务管理器  开始 -->  
+    <bean id="txmanager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">  
+        <property name="dataSource" ref="dataSource"></property>  
+    </bean>  
+    <!-- 配置事务管理器   结束 -->  
+      
+    <!--基本事务定义，使用transactionManager作事务管理,默认get*,find*方法的事务为read-only-->  
+    <tx:advice id="txAdvice" transaction-manager="txmanager">  
+        <tx:attributes>  
+            <tx:method name="find*" read-only="true" />  
+            <tx:method name="get*" read-only="true" />  
+            <tx:method name="update*" propagation="REQUIRED" />  
+            <tx:method name="delete*" propagation="REQUIRED" />  
+            <tx:method name="save*" propagation="REQUIRED" />  
+            <tx:method name="*" propagation="REQUIRED" />  
+        </tx:attributes>  
+    </tx:advice>       
+    <!-- 以AspectJ方式 定义AOP  
+             第一个*代表所有的返回值类型   
+             第二个*代表所有的类  
+             第三个*代表类所有方法   
+             最后一个..代表所有的参数。  
+     
+    <aop:config>  
+        <aop:pointcut id="interceptorPointCuts" expression="execution(* com.aodong.mybatisTest.service.*Impl.*(..))" />  
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="interceptorPointCuts" />  
+    </aop:config>  
+   --> 
+</beans>  
